@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    environment:
+      - CLUSTER_NAME=test
+    ports:
+      - "9870:9870"
+    volumes:
+      - namenode:/hadoop/dfs/name
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+    depends_on:
+      - namenode
+    volumes:
+      - datanode:/hadoop/dfs/data
+
+  hive-server:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    depends_on:
+      - namenode
+    ports:
+      - "10000:10000"
+
+  #Temporairement inactif, erreur 503 localhost21000, résoudre ça en fin de projet et greffer la partie Atlas
+
+  # atlas:
+  #   image: sburn/apache-atlas:2.3.0
+  #   ports:
+  #     - "21000:21000"
+
+volumes:
+  namenode:
+  datanode:
